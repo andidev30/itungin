@@ -1,0 +1,26 @@
+{
+    "id": "pool_789",
+    "title": "Kado Lahiran Anak Bos",
+    "admin_id": "user_123",
+    "created_at": "Timestamp",
+    "deadline": "Timestamp",
+    "target_amount": 1000000,
+    "collected_amount": 250000,
+    "status": "ACTIVE",
+    "contributors": [
+        {
+            "user_id": "user_456",
+            "name": "Budi",
+            "amount_paid": 100000,
+            "paid_at": "Timestamp",
+            "payment_proof_url": "gs://bucket/proof/img_1.jpg"
+        },
+        {
+            "user_id": "user_789",
+            "name": "Caca",
+            "amount_paid": 150000,
+            "paid_at": "Timestamp",
+            "payment_proof_url": "gs://bucket/proof/img_2.jpg"
+        }
+    ]
+}
