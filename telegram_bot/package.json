@@ -1,0 +1,20 @@
+{
+  "name": "itungin-telegram-bot",
+  "version": "1.0.0",
+  "description": "Telegram bot for Itungin - AI Assistant for Split Bill and Fund Pool",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "telegraf": "^4.16.0",
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
+

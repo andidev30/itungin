@@ -1,57 +1,257 @@
-# 🧾 Itungin: AI-Powered Multi-Agent Financial Orchestrator
+# Itungin - AI Assistant for Split Bill and Fund Pool
 
-> **BNB Marathon 2025 Submission**
+Itungin is an AI assistant that helps Indonesian users handle:
 
-![Google Cloud](https://img.shields.io/badge/Google_Cloud-4285F4?style=for-the-badge&logo=google-cloud&logoColor=white)
-![Cloud Run](https://img.shields.io/badge/Cloud_Run-4285F4?style=for-the-badge&logo=google-cloud&logoColor=white)
-![Vertex AI](https://img.shields.io/badge/Vertex_AI-FBBC04?style=for-the-badge&logo=google-cloud&logoColor=white)
-![Gemini](https://img.shields.io/badge/Powered_by-Gemini-8E75B2?style=for-the-badge&logo=google&logoColor=white)
+- **Split Bill** - Calculate and divide restaurant or food order bills
+- **Fund Pool (Patungan)** - Manage group contributions for shared goals
 
-**Itungin** streamlines group expenses by acting as an intelligent orchestrator that handles both complex receipt-based bill splitting and collective fund pooling. By leveraging a **Multi-Agent Architecture** on Google Cloud, it eliminates the friction of manual coordination, math errors, and awkward money conversations.
+## Architecture
 
----
+```
+┌─────────────────┐     HTTP      ┌─────────────────┐     MCP      ┌─────────────────┐
+│  Telegram Bot   │ ──────────▶  │  Itungin Agent  │ ──────────▶  │    Firestore    │
+│  (Node.js)      │              │  (Python ADK)   │              │    Database     │
+└─────────────────┘              └─────────────────┘              └─────────────────┘
+                                        │
+                                        ▼
+                                 ┌─────────────────┐
+                                 │  Gemini AI      │
+                                 │  (Multimodal)   │
+                                 └─────────────────┘
+```
 
-## 🚀 Key Features
+## Components
 
-### 1. 🧾 Smart Split Bill Agent (The "Math Wizard")
-Unlike standard calculators, this agent handles real-world chaos:
-* **Multimodal Receipt Scanning:** Uses **Gemini 1.5 Flash** via Vertex AI to parse unstructured receipt images instantly.
-* **Complex Logic Solver:** Automatically identifies and calculates **Tax (PB1)**, **Service Charges**, and **Discounts**.
-* **Natural Language Rules:** Understands context like *"Diskon 50% max 20rb, ongkir ditanggung si Bos"* to calculate fair shares.
+### 1. Python Agent (ADK)
 
-### 2. 💰 Pool Fund Agent (The "Treasurer")
-* **Transparent Collection:** Tracks contributions for shared goals (e.g., gifts, trips) in real-time.
-* **Status Tracking:** Monitors target amounts vs. collected funds stored securely in Firestore.
+- Location: `itungin_agent/`
+- Framework: Google Agent Development Kit (ADK)
+- Exposes HTTP API at `/agent/invoke`
+- Uses Gemini multimodal for text, image, and audio processing
+- Database access via MCP Toolbox for Databases
 
----
+### 2. Telegram Bot (Node.js)
 
-## 🏗️ High-Level Architecture
+- Location: `telegram_bot/`
+- Framework: Telegraf
+- Handles text, photo, document, and voice messages
+- Forwards messages to the Python agent
 
-Itungin utilizes an **Event-Driven Microservices** pattern to ensure scalability and responsiveness.
+### 3. MCP Toolbox Configuration
 
-![High-Level Architecture](documentation/Itungin%20HLD%20from%20GenArch.png)
+- Location: `tools.yaml`
+- Configures Firestore source and database tools
 
-### Tech Stack
+## Prerequisites
 
-  * **Compute:** Google Cloud Run
-  * **Event Bus:** Cloud Pub/Sub
-A  * **Framework:** AI Agent Development Kit (ADK)
-  * **Database:** Firestore (Datastore)
-  * **Language:** Node.js
+- Python 3.11+
+- Node.js 18+
+- Google Cloud Project with Firestore enabled
+- Gemini API key
+- Telegram Bot Token (from @BotFather)
+- MCP Toolbox for Databases binary
 
------
+## Setup
 
-## 📂 Database Schema (Firestore)
+### 1. Install MCP Toolbox for Databases
 
-The system relies on three core collections to maintain state and history:
+```bash
+# macOS
+brew install googleapis/genai-toolbox/toolbox
 
-1.  **`users`**: User profiles and notification preferences.
-2.  **`split_bills`**: Stores receipt images, extracted line items, natural language rules, and final calculation per participant.
-3.  **`fund_pools`**: Manages collective funding targets, deadlines, and contributor ledgers.
+# Or download binary
+curl -O https://storage.googleapis.com/genai-toolbox/v0.21.0/linux/amd64/toolbox
+chmod +x toolbox
+```
 
------
+### 2. Setup Python Agent
 
+```bash
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
+# Install dependencies
+pip install -r requirements.txt
 
+# Copy environment file
+cp .env.example .env
+# Edit .env with your configuration
+```
 
-*Built with ❤️ at BNB Marathon 2025 Jakarta*
+### 3. Setup Telegram Bot
+
+```bash
+cd telegram_bot
+
+# Install dependencies
+npm install
+
+# Copy environment file
+cp .env.example .env
+# Edit .env with your Telegram bot token
+```
+
+## Running Locally
+
+### 1. Start MCP Toolbox Server
+
+The MCP Toolbox runs as a separate server that the agent connects to:
+
+```bash
+# Download the toolbox binary from:
+# https://github.com/googleapis/genai-toolbox/releases
+
+# Start the toolbox server (runs on port 5000 by default)
+cd toolbox-db
+./toolbox --tools-file tools.yaml
+```
+
+### 2. Start ADK Agent
+
+```bash
+# From project root
+pip install -r requirements.txt
+
+# Run ADK API server (default port 8000)
+adk api_server itungin_agent
+```
+
+### 3. Start Telegram Bot
+
+```bash
+cd telegram_bot
+npm start
+```
+
+## Environment Variables
+
+### ADK Agent
+
+| Variable                    | Description                                             | Required |
+| --------------------------- | ------------------------------------------------------- | -------- |
+| `GOOGLE_CLOUD_PROJECT`      | GCP project ID                                          | Yes      |
+| `GOOGLE_CLOUD_LOCATION`     | GCP location (default: us-central1)                     | No       |
+| `GOOGLE_GENAI_USE_VERTEXAI` | Use Vertex AI (set to True)                             | Yes      |
+| `MCP_TOOLBOX_URL`           | MCP Toolbox server URL (default: http://127.0.0.1:5000) | No       |
+
+### Telegram Bot (.env)
+
+| Variable             | Description                                  | Required |
+| -------------------- | -------------------------------------------- | -------- |
+| `TELEGRAM_BOT_TOKEN` | Bot token from @BotFather                    | Yes      |
+| `AGENT_API_URL`      | ADK API URL (default: http://localhost:8000) | No       |
+
+## API Contract
+
+### ADK API - POST /run_sse
+
+Request (text only):
+
+```json
+{
+  "app_name": "itungin",
+  "user_id": "telegram_chat_id",
+  "session_id": "telegram_chat_id",
+  "new_message": {
+    "role": "user",
+    "parts": [{ "text": "patungan boneka 5 orang" }]
+  }
+}
+```
+
+Request (with file - base64):
+
+```json
+{
+  "app_name": "itungin",
+  "user_id": "telegram_chat_id",
+  "session_id": "telegram_chat_id",
+  "new_message": {
+    "role": "user",
+    "parts": [
+      { "text": "Analisis foto struk ini" },
+      {
+        "inline_data": {
+          "mime_type": "image/jpeg",
+          "data": "base64_encoded_file_content"
+        }
+      }
+    ]
+  }
+}
+```
+
+Response (SSE stream):
+
+```
+data: {"content": {"parts": [{"text": "Siap! Mau patungan apa nih? ..."}]}}
+```
+
+## Test Scenarios
+
+### 1. Split Bill via Text
+
+```
+User: Split bill dong, ada 3 orang. Nasi goreng 25rb x2, es teh 5rb x3, pajak 10%
+Bot: [Calculates and returns per-person breakdown]
+```
+
+### 2. Split Bill via Receipt Photo
+
+```
+User: [Sends photo of restaurant receipt]
+Bot: [Parses receipt, asks who ordered what, calculates split]
+```
+
+### 3. Fund Pool via Text
+
+```
+User: Patungan kado bos 500rb, 5 orang: Andi, Budi, Caca, Dedi, Eka
+Bot: [Creates pool, shows status]
+```
+
+### 4. Fund Pool Payment Update
+
+```
+User: Budi udah bayar 100rb
+Bot: [Updates payment, shows new status]
+```
+
+### 5. Voice Note
+
+```
+User: [Sends voice note: "Asep udah transfer 150 ribu ya"]
+Bot: [Transcribes, updates payment]
+```
+
+## Project Structure
+
+```
+.
+├── main.py                 # Python agent entry point
+├── requirements.txt        # Python dependencies
+├── tools.yaml              # MCP Toolbox configuration
+├── .env.example            # Environment template
+├── itungin_agent/
+│   ├── __init__.py
+│   ├── agent.py            # ADK agent definition
+│   ├── prompts.py          # System prompts
+│   ├── server.py           # FastAPI HTTP server
+│   └── tools/
+│       ├── __init__.py
+│       ├── fund_pool_tools.py
+│       └── split_bill_tools.py
+├── telegram_bot/
+│   ├── package.json
+│   ├── .env.example
+│   └── src/
+│       └── index.js        # Telegraf bot
+└── collections/
+    ├── fund_pools.json     # Fund pool schema
+    └── split_bills.json    # Split bill schema
+```
+
+## License
+
+MIT

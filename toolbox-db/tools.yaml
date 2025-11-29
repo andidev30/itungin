@@ -1,0 +1,188 @@
+# MCP Toolbox for Databases Configuration
+# PostgreSQL source and tools for Itungin
+#
+# Start the toolbox server with:
+#   ./toolbox --tools-file tools.yaml
+#
+# The server will run on http://localhost:5000 by default
+
+sources:
+  itungin-db:
+    kind: postgres
+    host: ${POSTGRES_HOST}
+    port: ${POSTGRES_PORT}
+    database: ${POSTGRES_DB}
+    user: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+
+tools:
+  # Fund Pool Tools
+  create-fund-pool:
+    kind: postgres-sql
+    source: itungin-db
+    description: Buat patungan baru dengan daftar kontributor. Panggil ini SATU KALI dengan semua data.
+    statement: |
+      WITH new_pool AS (
+        INSERT INTO fund_pools (title, admin_id, target_amount)
+        VALUES ($1, $2, $3)
+        RETURNING id, title, target_amount, status
+      ),
+      contributors AS (
+        INSERT INTO fund_pool_contributors (pool_id, name)
+        SELECT new_pool.id, unnest(string_to_array($4, ','))
+        FROM new_pool
+        RETURNING name
+      )
+      SELECT new_pool.*, array_agg(contributors.name) as contributors
+      FROM new_pool, contributors
+      GROUP BY new_pool.id, new_pool.title, new_pool.target_amount, new_pool.status
+    parameters:
+      - name: title
+        type: string
+        description: Judul patungan (misal "Kado Pak Azwar")
+      - name: admin_id
+        type: string
+        description: User ID yang buat patungan
+      - name: target_amount
+        type: integer
+        description: Target jumlah uang dalam rupiah
+      - name: contributors
+        type: string
+        description: Nama kontributor dipisah koma (misal "Andi,Budi,Cici")
+
+  record-payment:
+    kind: postgres-sql
+    source: itungin-db
+    description: Catat pembayaran kontributor berdasarkan judul patungan.
+    statement: |
+      WITH pool AS (
+        SELECT id FROM fund_pools WHERE LOWER(title) LIKE LOWER('%' || $1 || '%') AND status = 'ACTIVE' LIMIT 1
+      ),
+      updated AS (
+        UPDATE fund_pool_contributors
+        SET amount_paid = amount_paid + $3, paid_at = NOW(), updated_at = NOW()
+        WHERE pool_id = (SELECT id FROM pool) AND LOWER(name) LIKE LOWER('%' || $2 || '%')
+        RETURNING pool_id, name, amount_paid
+      )
+      SELECT u.name, u.amount_paid, fp.title, fp.target_amount,
+             (SELECT COALESCE(SUM(amount_paid), 0) FROM fund_pool_contributors WHERE pool_id = u.pool_id) as collected
+      FROM updated u
+      JOIN fund_pools fp ON fp.id = u.pool_id
+    parameters:
+      - name: title_keyword
+        type: string
+        description: Kata kunci judul patungan (misal "azwar" atau "kado")
+      - name: contributor_name
+        type: string
+        description: Nama kontributor yang bayar
+      - name: amount
+        type: integer
+        description: Jumlah pembayaran dalam rupiah
+
+  get-fund-pool:
+    kind: postgres-sql
+    source: itungin-db
+    description: Ambil detail patungan berdasarkan kata kunci judul.
+    statement: |
+      SELECT fp.id, fp.title, fp.admin_id, fp.target_amount,
+             COALESCE(SUM(c.amount_paid), 0) as collected_amount, fp.status,
+             json_agg(json_build_object('name', c.name, 'amount_paid', c.amount_paid)) as contributors
+      FROM fund_pools fp
+      LEFT JOIN fund_pool_contributors c ON c.pool_id = fp.id
+      WHERE LOWER(fp.title) LIKE LOWER('%' || $1 || '%') AND fp.status = 'ACTIVE'
+      GROUP BY fp.id
+    parameters:
+      - name: title_keyword
+        type: string
+        description: Kata kunci judul patungan
+
+  list-fund-pools:
+    kind: postgres-sql
+    source: itungin-db
+    description: List semua patungan aktif.
+    statement: |
+      SELECT fp.id, fp.title, fp.target_amount,
+             COALESCE(SUM(c.amount_paid), 0) as collected_amount, fp.status
+      FROM fund_pools fp
+      LEFT JOIN fund_pool_contributors c ON c.pool_id = fp.id
+      WHERE fp.status = 'ACTIVE'
+      GROUP BY fp.id
+      ORDER BY fp.created_at DESC
+    parameters: []
+
+  # Split Bill Tools
+  create-split-bill:
+    kind: postgres-sql
+    source: itungin-db
+    description: Buat split bill dengan daftar participant dan pembagian. Satu call untuk semua.
+    statement: |
+      WITH new_bill AS (
+        INSERT INTO split_bills (created_by, merchant_name, grand_total)
+        VALUES ('user', $1, $2)
+        RETURNING id, merchant_name, grand_total
+      ),
+      participants AS (
+        INSERT INTO split_bill_participants (bill_id, name, final_bill)
+        SELECT new_bill.id,
+               split_part(p.item, ':', 1),
+               split_part(p.item, ':', 2)::bigint
+        FROM new_bill, unnest(string_to_array($3, ',')) AS p(item)
+        RETURNING name, final_bill
+      )
+      SELECT new_bill.*, json_agg(json_build_object('name', participants.name, 'bayar', participants.final_bill)) as participants
+      FROM new_bill, participants
+      GROUP BY new_bill.id, new_bill.merchant_name, new_bill.grand_total
+    parameters:
+      - name: merchant_name
+        type: string
+        description: Nama merchant/restoran
+      - name: grand_total
+        type: integer
+        description: Total tagihan dalam rupiah
+      - name: participants
+        type: string
+        description: "Daftar participant dan jumlah bayar, format: Nama1:Jumlah1,Nama2:Jumlah2 (contoh: Andi:50000,Budi:35000)"
+
+  get-split-bill:
+    kind: postgres-sql
+    source: itungin-db
+    description: Ambil detail split bill by keyword merchant name.
+    statement: |
+      SELECT sb.id, sb.merchant_name, sb.grand_total, sb.created_at,
+             json_agg(json_build_object('name', p.name, 'final_bill', p.final_bill, 'status', p.payment_status)) as participants
+      FROM split_bills sb
+      LEFT JOIN split_bill_participants p ON p.bill_id = sb.id
+      WHERE LOWER(sb.merchant_name) LIKE LOWER('%' || $1 || '%')
+      GROUP BY sb.id
+      ORDER BY sb.created_at DESC
+      LIMIT 1
+    parameters:
+      - name: merchant_keyword
+        type: string
+        description: Kata kunci nama merchant
+
+  list-split-bills:
+    kind: postgres-sql
+    source: itungin-db
+    description: List semua split bills terbaru.
+    statement: |
+      SELECT sb.id, sb.merchant_name, sb.grand_total, sb.created_at,
+             json_agg(json_build_object('name', p.name, 'bayar', p.final_bill)) as participants
+      FROM split_bills sb
+      LEFT JOIN split_bill_participants p ON p.bill_id = sb.id
+      GROUP BY sb.id
+      ORDER BY sb.created_at DESC
+      LIMIT 10
+    parameters: []
+
+toolsets:
+  fund_pool_tools:
+    - create-fund-pool
+    - record-payment
+    - get-fund-pool
+    - list-fund-pools
+
+  split_bill_tools:
+    - create-split-bill
+    - get-split-bill
+    - list-split-bills
