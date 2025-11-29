@@ -1,8 +1,7 @@
-import os
 from google.adk.agents.llm_agent import Agent
 
 split_bill_agent = Agent(
-    model='gemini-2.5-flash',
+    model='gemini-2.5-flash-lite',
     name='split_bill_agent',
     description='Agent responsible for handling split bill related queries.',
     instruction='''

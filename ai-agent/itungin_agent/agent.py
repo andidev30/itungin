@@ -2,8 +2,17 @@ from google.adk.agents.llm_agent import Agent
 from .split_bill_agent import split_bill_agent
 from .fund_pool_agent import fund_pool_agent
 
+# from google.adk import Runner
+# from google.adk.sessions import VertexAiSessionService
+
+# session_service = VertexAiSessionService(
+#     project='rising-field-479619-r5',
+#     location='europe-west1',
+#     agent_engine_id='8365489084398829568'
+# )
+
 root_agent = Agent(
-    model='gemini-2.5-flash',
+    model='gemini-2.5-flash-lite',
     name='router_agent',
     description='Main router agent that directs user queries to the appropriate sub-agent.',
     instruction='''
@@ -16,3 +25,9 @@ root_agent = Agent(
     ''',
     sub_agents=[split_bill_agent, fund_pool_agent]
 )
+
+# runner = Runner(
+#     agent=root_agent,
+#     app_name="itungin_agent",
+#     session_service=session_service
+# )

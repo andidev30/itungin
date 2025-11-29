@@ -1,7 +1,7 @@
 from google.adk.agents.llm_agent import Agent
 
 fund_pool_agent = Agent(
-    model='gemini-2.5-flash',
+    model='gemini-2.5-flash-lite',
     name='fund_pool_agent',
     description='Agent responsible for handling fund pool related queries.',
     instruction='''
