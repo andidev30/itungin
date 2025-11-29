@@ -1,80 +1,26 @@
-version: '1.0'
+sources:
+  firestore-source:
+    kind: firestore
+    project: ${GOOGLE_CLOUD_PROJECT}
+    database: (default)
+
 tools:
-  - name: get_split_bill
-    description: Retrieve a split bill document by its ID.
-    parameters:
-      type: object
-      properties:
-        id:
-          type: string
-          description: The ID of the split bill.
-      required:
-        - id
-    source:
-      kind: firestore
-      project_id: ${GOOGLE_CLOUD_PROJECT}
-      database_id: (default)
-      collection: split_bills
-      method: get
-      args:
-        document_id: "{id}"
+  get_split_bill:
+    kind: firestore-get-documents
+    source: firestore-source
+    description: Retrieve split bill documents.
+  
+  list_split_bills:
+    kind: firestore-query-collection
+    source: firestore-source
+    description: Query split bill collection.
 
-  - name: list_split_bills
-    description: List all split bills.
-    parameters:
-      type: object
-      properties: {}
-      required: []
-    source:
-      kind: firestore
-      project_id: ${GOOGLE_CLOUD_PROJECT}
-      database_id: (default)
-      collection: split_bills
-      method: list
-  - name: create_split_bill
+  create_split_bill:
+    kind: firestore-add-documents
+    source: firestore-source
     description: Create a new split bill.
-    parameters:
-      type: object
-      properties:
-        id:
-          type: string
-          description: The ID of the new split bill.
-        data:
-          type: object
-          description: The split bill data.
-      required:
-        - id
-        - data
-    source:
-      kind: firestore
-      project_id: ${GOOGLE_CLOUD_PROJECT}
-      database_id: (default)
-      collection: split_bills
-      method: create
-      args:
-        document_id: "{id}"
-        data: "{data}"
 
-  - name: update_split_bill
+  update_split_bill:
+    kind: firestore-update-document
+    source: firestore-source
     description: Update an existing split bill.
-    parameters:
-      type: object
-      properties:
-        id:
-          type: string
-          description: The ID of the split bill to update.
-        data:
-          type: object
-          description: The data to update.
-      required:
-        - id
-        - data
-    source:
-      kind: firestore
-      project_id: ${GOOGLE_CLOUD_PROJECT}
-      database_id: (default)
-      collection: split_bills
-      method: update
-      args:
-        document_id: "{id}"
-        data: "{data}"
