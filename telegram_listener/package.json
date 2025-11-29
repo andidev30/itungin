@@ -12,8 +12,9 @@
   "type": "commonjs",
   "dependencies": {
     "@google-cloud/datastore": "^10.0.1",
-    "@google-cloud/pubsub": "^5.2.0",
+    "axios": "^1.13.2",
     "dotenv": "^17.2.3",
+    "form-data": "^4.0.5",
     "telegraf": "^4.16.3"
   }
 }
