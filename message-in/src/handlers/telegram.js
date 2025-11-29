@@ -1,10 +1,17 @@
 import { uploadFile } from '../services/storage.js'
 import { publishMessage } from '../services/pubsub.js'
+import { checkOrCreateUser } from '../middleware/user.js'
 
 export const handleTelegramWebhook = async (c) => {
     try {
         const body = await c.req.parseBody()
         const { userId, message, caption } = body
+
+        if (!userId) {
+            return c.json({ success: false, error: 'User ID is required' }, 400)
+        }
+
+        const id = await checkOrCreateUser(userId)
 
         const file = body['file']
         const voice = body['voice']
