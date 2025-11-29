@@ -2,7 +2,6 @@
     "id": "bill_xyz123",
     "created_by": "user_123",
     "created_at": "Timestamp",
-    "status": "PROCESSING",
     "receipt_image_url": "gs://bucket_name/receipts/bill_xyz123.jpg",
     "rules_prompt": "Diskon max 20rb, pajak bagi rata, si Asep ga bayar ongkir",
     "summary": {
