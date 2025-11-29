@@ -1,5 +1,5 @@
 {
-  "name": "channel-in",
+  "name": "message-in",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
