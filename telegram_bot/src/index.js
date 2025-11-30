@@ -45,14 +45,21 @@ async function downloadFileAsBase64(fileId) {
 // Store session IDs per user
 const userSessions = new Map();
 
-/**
- * Get or create session for user
- */
-async function getOrCreateSession(userId) {
-  if (userSessions.has(userId)) {
-    return userSessions.get(userId);
-  }
+// Reset keywords - case insensitive
+const RESET_KEYWORDS = ['reset'];
 
+/**
+ * Check if message is a reset command
+ */
+function isResetCommand(text) {
+  const lower = text.toLowerCase().trim();
+  return RESET_KEYWORDS.some(kw => lower === kw || lower.startsWith(kw + ' '));
+}
+
+/**
+ * Create new session for user (force create)
+ */
+async function createNewSession(userId) {
   try {
     const response = await axios.post(
       `${AGENT_API_URL}/apps/${APP_NAME}/users/${userId}/sessions`,
@@ -66,6 +73,16 @@ async function getOrCreateSession(userId) {
     console.error('Error creating session:', error.message);
     throw error;
   }
+}
+
+/**
+ * Get or create session for user
+ */
+async function getOrCreateSession(userId) {
+  if (userSessions.has(userId)) {
+    return userSessions.get(userId);
+  }
+  return createNewSession(userId);
 }
 
 /**
@@ -184,6 +201,13 @@ bot.help((ctx) => {
 bot.on('text', async (ctx) => {
   const userId = getUserId(ctx);
   const text = ctx.message.text;
+
+  // Check for reset command
+  if (isResetCommand(text)) {
+    await createNewSession(userId);
+    await ctx.reply('🔄 Session di-reset! Aku siap mulai dari awal. Ada yang bisa dibantu?');
+    return;
+  }
 
   const response = await invokeAgent(userId, text);
   await ctx.reply(response);
