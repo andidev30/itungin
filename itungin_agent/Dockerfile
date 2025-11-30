@@ -5,7 +5,7 @@ FROM python:3.12-slim
 WORKDIR /workspace
 
 # Install dependencies
-RUN pip install --no-cache-dir google-adk
+RUN pip install --no-cache-dir google-adk toolbox-core
 
 # Copy agent code - structure: /workspace/itungin_agent/agent.py
 COPY . ./itungin_agent/

@@ -12,11 +12,5 @@ RUN npm ci --only=production
 # Copy source code
 COPY src ./src
 
-# Environment variables (override at runtime)
-ENV TELEGRAM_BOT_TOKEN=""
-ENV AGENT_API_URL="http://adk:8000"
-ENV APP_NAME="itungin_agent"
-
 # Run the bot
 CMD ["node", "src/index.js"]
-
