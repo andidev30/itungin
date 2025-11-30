@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # MCP Toolbox for Databases
@@ -14,7 +14,8 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:5000/api/toolsets"]
+      test:
+        ["CMD", "wget", "-q", "--spider", "http://localhost:5000/api/toolsets"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -22,8 +23,8 @@ services:
   # ADK Agent Server
   adk:
     build:
-      context: .
-      dockerfile: itungin_agent/Dockerfile
+      context: ./itungin_agent
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
     environment:
@@ -44,4 +45,3 @@ services:
     depends_on:
       - adk
     restart: unless-stopped
-
