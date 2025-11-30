@@ -99,7 +99,7 @@ split_bill_tools = [
 # Split Bill Sub-Agent
 split_bill_agent = Agent(
     name="split_bill_agent",
-    model="gemini-2.0-flash",
+    model="gemini-2.5-flash-lite",
     description="Agent untuk menangani Split Bill - pembagian tagihan restoran atau pesanan makanan",
     instruction=SPLIT_BILL_INSTRUCTION,
     tools=split_bill_tools,
@@ -109,7 +109,7 @@ split_bill_agent = Agent(
 # Fund Pool Sub-Agent
 fund_pool_agent = Agent(
     name="fund_pool_agent",
-    model="gemini-2.0-flash",
+    model="gemini-2.5-flash-lite",
     description="Agent untuk menangani Fund Pool (Patungan) - iuran bersama untuk tujuan tertentu",
     instruction=FUND_POOL_INSTRUCTION,
     tools=fund_pool_tools,
@@ -119,7 +119,7 @@ fund_pool_agent = Agent(
 # Root Orchestrator Agent
 root_agent = Agent(
     name="itungin_agent",
-    model="gemini-2.0-flash",
+    model="gemini-2.5-flash-lite",
     description="Itungin - Asisten AI untuk Split Bill dan Patungan",
     instruction=SYSTEM_INSTRUCTION,
     sub_agents=[split_bill_agent, fund_pool_agent],
