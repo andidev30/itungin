@@ -1,30 +1,8 @@
-# MCP Toolbox for Databases Dockerfile
-FROM golang:1.23-alpine AS builder
-
-# Install toolbox
-RUN go install github.com/googleapis/genai-toolbox@latest
-
-# Runtime image
-FROM alpine:3.20
-
-# Copy toolbox binary
-COPY --from=builder /go/bin/genai-toolbox /usr/local/bin/toolbox
-
-WORKDIR /app
+# MCP Toolbox for Databases - using official image
+FROM us-central1-docker.pkg.dev/database-toolbox/toolbox/toolbox:latest
 
 # Copy config
-COPY tools.yaml ./
-
-# Environment variables for PostgreSQL (override at runtime)
-ENV POSTGRES_HOST=""
-ENV POSTGRES_PORT="5432"
-ENV POSTGRES_DB=""
-ENV POSTGRES_USER=""
-ENV POSTGRES_PASSWORD=""
-
-# Expose port
-EXPOSE 5000
+COPY tools.yaml /config/tools.yaml
 
 # Run toolbox
-CMD ["toolbox", "--tools-file", "tools.yaml", "--address", "0.0.0.0", "--port", "5000"]
-
+CMD ["toolbox", "--tools-file", "/config/tools.yaml", "--address", "0.0.0.0"]
