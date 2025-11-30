@@ -79,6 +79,25 @@ async function createNewSession(userId) {
  * Get or create session for user
  */
 async function getOrCreateSession(userId) {
+  // Always try to get existing sessions first
+  if (!userSessions.has(userId)) {
+    try {
+      // Try to list existing sessions
+      const response = await axios.get(
+        `${AGENT_API_URL}/apps/${APP_NAME}/users/${userId}/sessions`,
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+      if (response.data && response.data.length > 0) {
+        // Use most recent session
+        const latestSession = response.data[response.data.length - 1];
+        userSessions.set(userId, latestSession.id);
+        console.log(`Reusing session ${latestSession.id} for user ${userId}`);
+      }
+    } catch (error) {
+      console.log(`No existing sessions for user ${userId}, will create new`);
+    }
+  }
+
   if (userSessions.has(userId)) {
     return userSessions.get(userId);
   }
